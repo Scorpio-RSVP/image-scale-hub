@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}My Files{% endblock %}
+
+{% block content %}
+<style>
+    .files-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .files-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+    .files-header h2 { margin: 0; }
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-tab {
+        padding: 8px 16px;
+        background: #f3f4f6;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    .filter-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .filter-tab:hover:not(.active) { background: #e5e7eb; }
+    
+    .files-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    
+    .file-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .file-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+    
+    .file-preview {
+        position: relative;
+        height: 180px;
+        background: #f8f9fa;
+        overflow: hidden;
+    }
+    .file-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .file-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .badge-frame { background: #8b5cf6; color: white; }
+    .badge-compress { background: #10b981; color: white; }
+    .badge-resize { background: #f59e0b; color: white; }
+    .badge-convert { background: #3b82f6; color: white; }
+    .badge-original { background: #6b7280; color: white; }
+    
+    .file-type-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+    }
+    
+    .file-info { padding: 15px; }
+    .file-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #1f2937;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-bottom: 8px;
+    }
+    .file-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 12px;
+    }
+    .file-size-compare {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        padding: 8px 12px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    .size-original { color: #6b7280; text-decoration: line-through; }
+    .size-new { color: #10b981; font-weight: 600; }
+    .size-arrow { color: #9ca3af; }
+    .size-savings { 
+        background: #d1fae5; 
+        color: #065f46; 
+        padding: 2px 8px; 
+        border-radius: 10px; 
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .size-increase {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .file-actions { display: flex; gap: 8px; }
+    .file-actions .btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    .btn-download { background: #10b981; color: white; }
+    .btn-download:hover { background: #059669; }
+    .btn-use { background: #3b82f6; color: white; }
+    .btn-use:hover { background: #2563eb; }
+    .btn-delete { background: #fee2e2; color: #dc2626; }
+    .btn-delete:hover { background: #fecaca; }
+    
+    .use-dropdown {
+        position: relative;
+        flex: 1;
+    }
+    .use-dropdown-content {
+        display: none;
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        margin-bottom: 5px;
+        overflow: hidden;
+        z-index: 10;
+    }
+    .use-dropdown:hover .use-dropdown-content { display: block; }
+    .use-dropdown-content a {
+        display: block;
+        padding: 10px 15px;
+        color: #374151;
+        text-decoration: none;
+        font-size: 13px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .use-dropdown-content a:hover { background: #f3f4f6; }
+    .use-dropdown-content a:last-child { border-bottom: none; }
+    
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+    .empty-state .icon { font-size: 64px; margin-bottom: 20px; }
+    .empty-state h3 { color: #374151; margin-bottom: 10px; }
+    .empty-state p { color: #6b7280; }
+</style>
+
+<div class="files-container">
+    <div class="files-header">
+        <h2>📁 My Files</h2>
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterFiles('all')">All</button>
+            <button class="filter-tab" onclick="filterFiles('frame')">🖼️ Frame</button>
+            <button class="filter-tab" onclick="filterFiles('compress')">📦 Compress</button>
+            <button class="filter-tab" onclick="filterFiles('resize')">📏 Resize</button>
+            <button class="filter-tab" onclick="filterFiles('convert')">🔄 Convert</button>
+        </div>
+    </div>
+    
+    {% set image_list = images.items if images.items is defined else images %}
+    {% if image_list %}
+    <div class="files-grid">
+        {% for image in image_list %}
+        <div class="file-card" data-tool="{{ image.tool_used }}">
+            <div class="file-preview">
+                <img src="{{ url_for('images.serve_image', filename=image.saved_filename) }}" 
+                     alt="{{ image.original_filename }}"
+                     loading="lazy">
+                
+                <!-- Tool Badge -->
+                {% if image.tool_used == 'frame' or image.tool_used == 'blur' %}
+                <span class="file-badge badge-frame">🖼️ Frame</span>
+                {% elif image.tool_used == 'compress' %}
+                <span class="file-badge badge-compress">📦 Compress</span>
+                {% elif image.tool_used == 'resize' %}
+                <span class="file-badge badge-resize">📏 Resize</span>
+                {% elif image.tool_used == 'convert' %}
+                <span class="file-badge badge-convert">🔄 Convert</span>
+                {% else %}
+                <span class="file-badge badge-original">📄 Original</span>
+                {% endif %}
+                
+                <!-- Dimensions -->
+                {% if image.width and image.height %}
+                <span class="file-type-icon">{{ image.width }}×{{ image.height }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="file-info">
+                <div class="file-name" title="{{ image.original_filename }}">
+                    {{ image.original_filename }}
+                </div>
+                
+                <div class="file-meta">
+                    <span>{{ image.created_at.strftime('%b %d, %Y') }}</span>
+                    <span>{{ (image.file_size / 1024)|round(1) if image.file_size else '?' }} KB</span>
+                </div>
+                
+                <!-- Size Comparison (for compress tool) -->
+                {% if image.tool_used == 'compress' and image.original_size and image.file_size %}
+                <div class="file-size-compare">
+                    <span class="size-original">{{ (image.original_size / 1024)|round(1) }} KB</span>
+                    <span class="size-arrow">→</span>
+                    <span class="size-new">{{ (image.file_size / 1024)|round(1) }} KB</span>
+                    {% set savings = ((image.original_size - image.file_size) / image.original_size * 100)|round(0) %}
+                    {% if savings > 0 %}
+                    <span class="size-savings">-{{ savings }}%</span>
+                    {% else %}
+                    <span class="size-increase">+{{ (-savings)|round(0) }}%</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="file-actions">
+                    <a href="{{ url_for('images.download_image', image_id=image.id) }}" class="btn btn-download">
+                        💾 Download
+                    </a>
+                    
+                    <div class="use-dropdown">
+                        <button class="btn btn-use">🔧 Use In...</button>
+                        <div class="use-dropdown-content">
+                            <a href="/?tool=frame&file={{ image.id }}">🖼️ Frame Tool</a>
+                            <a href="/?tool=compress&file={{ image.id }}">📦 Compress</a>
+                            <a href="/?tool=resize&file={{ image.id }}">📏 Resize</a>
+                            <a href="/?tool=convert&file={{ image.id }}">🔄 Convert</a>
+                        </div>
+                    </div>
+                    
+                    <form action="{{ url_for('images.delete_image', image_id=image.id) }}" method="POST" style="flex: 0;">
+                        <button type="submit" onclick="return confirm('Delete this image?')" class="btn btn-delete">
+                            🗑️
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📁</div>
+        <h3>No files yet</h3>
+        <p>Process some images to see them here!</p>
+        <a href="/" class="btn btn-use" style="display: inline-block; margin-top: 20px; padding: 12px 24px;">
+            🖼️ Start Processing Images
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function filterFiles(tool) {
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Filter cards
+    document.querySelectorAll('.file-card').forEach(card => {
+        if (tool === 'all') {
+            card.style.display = 'block';
+        } else {
+            const cardTool = card.dataset.tool;
+            // Handle 'blur' as 'frame'
+            const normalizedTool = cardTool === 'blur' ? 'frame' : cardTool;
+            card.style.display = normalizedTool === tool ? 'block' : 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

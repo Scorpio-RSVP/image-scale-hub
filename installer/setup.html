@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Scale Hub - Easy Setup Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 { font-size: 32px; margin-bottom: 10px; }
+        .header p { opacity: 0.8; font-size: 18px; }
+        
+        .content { padding: 40px; }
+        
+        .install-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .option-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .option-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.2);
+        }
+        .option-card.recommended {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+        .option-card .icon { font-size: 48px; margin-bottom: 15px; }
+        .option-card h3 { font-size: 20px; margin-bottom: 10px; color: #1a1a2e; }
+        .option-card p { color: #6b7280; font-size: 14px; line-height: 1.6; }
+        .option-card .badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        
+        h2 { color: #1a1a2e; margin-bottom: 20px; font-size: 24px; }
+        
+        .step {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .step-number {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .step h4 { font-size: 18px; color: #1a1a2e; }
+        .step p { color: #4b5563; line-height: 1.7; }
+        
+        .code-block {
+            background: #1e293b;
+            color: #10b981;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+            position: relative;
+        }
+        .code-block .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #374151;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .code-block .copy-btn:hover { background: #4b5563; }
+        
+        .hosting-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .hosting-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .hosting-card img {
+            height: 40px;
+            margin-bottom: 10px;
+        }
+        .hosting-card h5 { margin-bottom: 5px; }
+        .hosting-card .price { color: #10b981; font-weight: bold; }
+        
+        .btn {
+            display: inline-block;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .alert-info { background: #dbeafe; color: #1e40af; }
+        .alert-success { background: #d1fae5; color: #065f46; }
+        .alert-warning { background: #fef3c7; color: #92400e; }
+        
+        .faq { margin-top: 40px; }
+        .faq-item {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 20px 0;
+        }
+        .faq-item summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 16px;
+        }
+        .faq-item p {
+            margin-top: 15px;
+            color: #4b5563;
+            line-height: 1.7;
+        }
+        
+        @media (max-width: 600px) {
+            .header { padding: 30px 20px; }
+            .header h1 { font-size: 24px; }
+            .content { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖼️ Image Scale Hub</h1>
+            <p>Easy Setup Guide - No Coding Required!</p>
+        </div>
+        
+        <div class="content">
+            <h2>Choose Your Installation Method</h2>
+            
+            <div class="install-options">
+                <div class="option-card recommended" onclick="showTab('one-click')">
+                    <span class="badge">Easiest</span>
+                    <div class="icon">☁️</div>
+                    <h3>One-Click Cloud Deploy</h3>
+                    <p>Deploy to DigitalOcean, Railway, or Render with one click. No server setup needed!</p>
+                </div>
+                
+                <div class="option-card" onclick="showTab('vps')">
+                    <div class="icon">🖥️</div>
+                    <h3>VPS / Dedicated Server</h3>
+                    <p>Install on your own server (DigitalOcean, Linode, Vultr, etc.) with our auto-installer.</p>
+                </div>
+                
+                <div class="option-card" onclick="showTab('shared')">
+                    <div class="icon">🌐</div>
+                    <h3>Shared Hosting</h3>
+                    <p>Install on cPanel/Plesk shared hosting (limited features).</p>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('one-click')">☁️ One-Click</button>
+                <button class="tab" onclick="showTab('vps')">🖥️ VPS</button>
+                <button class="tab" onclick="showTab('shared')">🌐 Shared</button>
+                <button class="tab" onclick="showTab('docker')">🐳 Docker</button>
+            </div>
+            
+            <!-- One-Click Deploy -->
+            <div id="one-click" class="tab-content active">
+                <h2>☁️ One-Click Cloud Deploy</h2>
+                <p style="margin-bottom: 25px; color: #6b7280;">The easiest way to get started. Click a button, fill in a few details, and you're done!</p>
+                
+                <div class="hosting-options">
+                    <a href="https://cloud.digitalocean.com/apps/new?repo=https://github.com/YOUR_USERNAME/image-resizer-pro" class="hosting-card" style="text-decoration: none; color: inherit;">
+                        <div style="font-size: 40px;">🌊</div>
+                        <h5>DigitalOcean</h5>
+                        <div class="price">From $5/mo</div>
+                    </a>
+                    <a href="https://railway.app/new/template?template=https://github.com/YOUR_USERNAME/image-resizer-pro" class="hosting-card" style="text-decoration: none; color: inherit;">
+                        <div style="font-size: 40px;">🚂</div>
+                        <h5>Railway</h5>
+                        <div class="price">Free tier available</div>
+                    </a>
+                    <a href="https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/image-resizer-pro" class="hosting-card" style="text-decoration: none; color: inherit;">
+                        <div style="font-size: 40px;">⚡</div>
+                        <h5>Render</h5>
+                        <div class="price">Free tier available</div>
+                    </a>
+                </div>
+                
+                <div class="alert alert-info">
+                    💡 <strong>Tip:</strong> Railway and Render offer free tiers perfect for testing. DigitalOcean is best for production.
+                </div>
+            </div>
+            
+            <!-- VPS Install -->
+            <div id="vps" class="tab-content">
+                <h2>🖥️ VPS Installation</h2>
+                <p style="margin-bottom: 25px; color: #6b7280;">Install on your own server with our automatic installer script.</p>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h4>Get a VPS Server</h4>
+                    </div>
+                    <p>Sign up for a VPS from any provider. Recommended:</p>
+                    <div class="hosting-options" style="margin-top: 15px;">
+                        <div class="hosting-card">
+                            <h5>DigitalOcean</h5>
+                            <div class="price">$4/mo</div>
+                        </div>
+                        <div class="hosting-card">
+                            <h5>Vultr</h5>
+                            <div class="price">$5/mo</div>
+                        </div>
+                        <div class="hosting-card">
+                            <h5>Linode</h5>
+                            <div class="price">$5/mo</div>
+                        </div>
+                        <div class="hosting-card">
+                            <h5>Hetzner</h5>
+                            <div class="price">€3/mo</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h4>Connect to Your Server</h4>
+                    </div>
+                    <p>Use the web console provided by your hosting provider, or use an SSH client:</p>
+                    <ul style="margin: 15px 0 0 20px; color: #4b5563;">
+                        <li><strong>Windows:</strong> Use <a href="https://www.putty.org/" target="_blank">PuTTY</a> or Windows Terminal</li>
+                        <li><strong>Mac/Linux:</strong> Open Terminal and type: <code>ssh root@YOUR_SERVER_IP</code></li>
+                    </ul>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h4>Run the Installer</h4>
+                    </div>
+                    <p>Copy and paste this single command:</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/image-resizer-pro/main/install.sh | sudo bash
+                    </div>
+                    <p style="margin-top: 15px;">The installer will ask you a few questions:</p>
+                    <ul style="margin: 10px 0 0 20px; color: #4b5563;">
+                        <li>Your app name (e.g., "My Photo Tool")</li>
+                        <li>Domain name (optional)</li>
+                        <li>Admin username & password</li>
+                    </ul>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <h4>Access Your App!</h4>
+                    </div>
+                    <p>Once complete, visit <code>http://YOUR_SERVER_IP:5000</code> in your browser.</p>
+                </div>
+                
+                <div class="alert alert-success">
+                    ✅ <strong>That's it!</strong> The installer handles Docker, SSL certificates, and everything else automatically.
+                </div>
+            </div>
+            
+            <!-- Shared Hosting -->
+            <div id="shared" class="tab-content">
+                <h2>🌐 Shared Hosting (cPanel)</h2>
+                
+                <div class="alert alert-warning">
+                    ⚠️ <strong>Limited Support:</strong> Shared hosting has restrictions. Some features may not work. We recommend VPS for full functionality.
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h4>Check Requirements</h4>
+                    </div>
+                    <p>Your hosting must support:</p>
+                    <ul style="margin: 10px 0 0 20px; color: #4b5563;">
+                        <li>Python 3.9+ (check with your host)</li>
+                        <li>SSH access</li>
+                        <li>pip package manager</li>
+                    </ul>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h4>Download & Upload</h4>
+                    </div>
+                    <p>Download the ZIP file and upload via File Manager:</p>
+                    <a href="https://github.com/YOUR_USERNAME/image-resizer-pro/archive/main.zip" class="btn btn-primary" style="margin-top: 15px;">
+                        📥 Download ZIP
+                    </a>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h4>Setup Python App</h4>
+                    </div>
+                    <p>In cPanel, go to "Setup Python App" and create a new application pointing to the uploaded folder.</p>
+                </div>
+            </div>
+            
+            <!-- Docker -->
+            <div id="docker" class="tab-content">
+                <h2>🐳 Docker Installation</h2>
+                <p style="margin-bottom: 25px; color: #6b7280;">For developers who prefer Docker.</p>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h4>Quick Start</h4>
+                    </div>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+docker run -d -p 5000:5000 -v ./data:/app/data ghcr.io/YOUR_USERNAME/image-resizer-pro
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h4>With Docker Compose</h4>
+                    </div>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+git clone https://github.com/YOUR_USERNAME/image-resizer-pro.git
+cd image-resizer-pro
+docker-compose up -d
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FAQ -->
+            <div class="faq">
+                <h2>❓ Frequently Asked Questions</h2>
+                
+                <details class="faq-item">
+                    <summary>Do I need to know how to code?</summary>
+                    <p>No! The one-click deploy options and our installer script handle everything automatically. Just answer a few simple questions.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>How much does hosting cost?</summary>
+                    <p>You can start for free with Railway or Render. For production use, a $4-5/month VPS is recommended.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>Can I use my own domain name?</summary>
+                    <p>Yes! The installer can set up your domain with free SSL certificates automatically.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>Is my data safe?</summary>
+                    <p>Yes. All data stays on your server. We don't have access to your images or user data.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>How do I get help?</summary>
+                    <p>Open an issue on GitHub or join our community discussions. We're happy to help!</p>
+                </details>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tabId) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Show selected
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+        }
+        
+        function copyCode(btn) {
+            const code = btn.parentElement.textContent.replace('📋 Copy', '').trim();
+            navigator.clipboard.writeText(code);
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => btn.textContent = '📋 Copy', 2000);
+        }
+    </script>
+</body>
+</html>

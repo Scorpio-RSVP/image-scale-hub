@@ -1,0 +1,93 @@
+{% extends "admin/base.html" %}
+{% block title %}Presets{% endblock %}
+
+{% block content %}
+<h2 class="section-title">📐 Size Presets</h2>
+<p style="color: #7f8c8d; margin-bottom: 20px;">Define preset sizes for the Frame Tool. These appear as quick-select buttons.</p>
+
+<form id="presetForm" style="margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+    <h3 style="margin-bottom: 15px;">➕ Add New Preset</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name" id="presetName" class="form-control" placeholder="Instagram Story" required>
+        </div>
+        <div class="form-group">
+            <label>Width (px)</label>
+            <input type="number" name="width" id="presetWidth" class="form-control" placeholder="1080" min="100" max="4000" required>
+        </div>
+        <div class="form-group">
+            <label>Height (px)</label>
+            <input type="number" name="height" id="presetHeight" class="form-control" placeholder="1920" min="100" max="4000" required>
+        </div>
+        <div class="form-group">
+            <label>Icon</label>
+            <input type="text" name="icon" id="presetIcon" class="form-control" placeholder="📱" value="📐">
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">Add Preset</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Icon</th>
+            <th>Name</th>
+            <th>Size</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="presetsTable">
+        {% for p in presets %}
+        <tr data-id="{{ p.id }}">
+            <td style="font-size: 1.5em;">{{ p.icon }}</td>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>{{ p.width }} × {{ p.height }}</td>
+            <td>
+                {% if p.is_active %}
+                <span class="badge badge-active">Active</span>
+                {% else %}
+                <span class="badge badge-inactive">Inactive</span>
+                {% endif %}
+            </td>
+            <td class="actions">
+                <button onclick="togglePreset({{ p.id }})" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Toggle</button>
+                <button onclick="deletePreset({{ p.id }})" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">Delete</button>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align: center; color: #7f8c8d;">No presets yet. Add some above!</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+document.getElementById('presetForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const form = new FormData(this);
+    const res = await fetch('{{ url_for("admin.create_preset") }}', {method: 'POST', body: form});
+    const data = await res.json();
+    if (data.success) {
+        location.reload();
+    } else {
+        alert(data.error || 'Error creating preset');
+    }
+};
+
+async function togglePreset(id) {
+    const res = await fetch(`/admin/presets/${id}/toggle`, {method: 'POST'});
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error);
+}
+
+async function deletePreset(id) {
+    if (!confirm('Delete this preset?')) return;
+    const res = await fetch(`/admin/presets/${id}/delete`, {method: 'POST'});
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error);
+}
+</script>
+{% endblock %}

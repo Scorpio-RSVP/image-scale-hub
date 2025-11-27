@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Main application
+  app:
+    build: .
+    container_name: scorpio-image-resizer
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_CONFIG=production
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-key}
+      - APP_NAME=${APP_NAME:-Scorpio Image Resizer}
+      - APP_VERSION=${APP_VERSION:-1.0.0}
+      - DEBUG=${DEBUG:-False}
+      - DATABASE_URL=sqlite:///data/users.db
+      - SMTP_SERVER=${SMTP_SERVER:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Scorpio Image Resizer}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-True}
+      - SESSION_TIMEOUT=${SESSION_TIMEOUT:-1800}
+      - MAX_LOGIN_ATTEMPTS=${MAX_LOGIN_ATTEMPTS:-5}
+      - LOCKOUT_DURATION=${LOCKOUT_DURATION:-900}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-10485760}
+      - ALLOWED_EXTENSIONS=${ALLOWED_EXTENSIONS:-jpg,jpeg,png,webp}
+      - PROCESSING_MODE=${PROCESSING_MODE:-hybrid}
+      - IMAGE_STORAGE_MODE=${IMAGE_STORAGE_MODE:-private}
+      - UPDATE_CHECK_URL=${UPDATE_CHECK_URL:-}
+      - ENABLE_AUTO_UPDATE=${ENABLE_AUTO_UPDATE:-True}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL (optional - uncomment to use)
+  # db:
+  #   image: postgres:15
+  #   container_name: scorpio-db
+  #   environment:
+  #     POSTGRES_DB: imageresizer
+  #     POSTGRES_USER: scorpio
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-your_password_here}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U scorpio"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # Redis (optional - for session storage and caching)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: scorpio-redis
+  #   command: redis-server --appendonly yes
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+
+volumes:
+  # postgres_data:
+  # redis_data:
+
+networks:
+  default:
+    name: scorpio-network

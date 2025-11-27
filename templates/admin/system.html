@@ -1,0 +1,308 @@
+{% extends "admin/base.html" %}
+{% block title %}System{% endblock %}
+
+{% block content %}
+<h2 class="section-title">🔧 System Information</h2>
+
+<div class="form-row" style="margin-bottom: 25px;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; color: white; flex: 1;">
+        <div style="font-size: 0.9em; opacity: 0.9;">Version</div>
+        <div style="font-size: 2em; font-weight: bold;">{{ version.current }}</div>
+        {% if version.update_available %}
+        <div style="margin-top: 10px; padding: 8px 12px; background: rgba(255,255,255,0.2); border-radius: 6px; display: inline-block;">
+            🆕 Update available: {{ version.latest }}
+        </div>
+        {% else %}
+        <div style="margin-top: 10px; opacity: 0.8;">✓ Up to date</div>
+        {% endif %}
+    </div>
+    <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; flex: 1;">
+        <div style="font-size: 0.9em; color: #7f8c8d;">Python</div>
+        <div style="font-size: 1.5em; font-weight: bold;">{{ system.python_version }}</div>
+        <div style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">Flask {{ system.flask_version }}</div>
+    </div>
+    <div style="background: {% if database.type == 'mysql' %}#e8f8f5{% elif database.type == 'postgresql' %}#e8f4fd{% else %}#fef9e7{% endif %}; padding: 25px; border-radius: 12px; flex: 1;">
+        <div style="font-size: 0.9em; color: #7f8c8d;">Database</div>
+        <div style="font-size: 1.5em; font-weight: bold;">{{ database.type_display }}</div>
+        <div style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">{{ database.size }}</div>
+    </div>
+    <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; flex: 1;">
+        <div style="font-size: 0.9em; color: #7f8c8d;">Uptime</div>
+        <div style="font-size: 1.5em; font-weight: bold;">{{ system.uptime }}</div>
+        <div style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">{{ system.os }}</div>
+    </div>
+</div>
+
+<h3 style="margin: 25px 0 15px;">🗄️ Database Configuration</h3>
+<div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 25px;">
+    <p style="margin-bottom: 15px;">Current: <strong>{{ database.type_display }}</strong> {% if database.type == 'sqlite' %}(file-based, easy backup){% elif database.type == 'mysql' %}(scalable, production-ready){% else %}(enterprise-grade){% endif %}</p>
+    
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid {% if database.type == 'sqlite' %}#f39c12{% else %}#ecf0f1{% endif %};">
+            <h4 style="margin-bottom: 10px;">📁 SQLite</h4>
+            <ul style="font-size: 13px; color: #7f8c8d; margin-left: 15px;">
+                <li>Single file database</li>
+                <li>Easy backup (just copy file)</li>
+                <li>No server needed</li>
+                <li>Best for small deployments</li>
+            </ul>
+            {% if database.type == 'sqlite' %}<span class="badge badge-active" style="margin-top: 10px;">Current</span>{% endif %}
+        </div>
+        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid {% if database.type == 'mysql' %}#27ae60{% else %}#ecf0f1{% endif %};">
+            <h4 style="margin-bottom: 10px;">🐬 MySQL</h4>
+            <ul style="font-size: 13px; color: #7f8c8d; margin-left: 15px;">
+                <li>Scalable & fast</li>
+                <li>Multi-user support</li>
+                <li>Remote connections</li>
+                <li>Best for production</li>
+            </ul>
+            {% if database.type == 'mysql' %}<span class="badge badge-active" style="margin-top: 10px;">Current</span>{% endif %}
+        </div>
+        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid {% if database.type == 'postgresql' %}#3498db{% else %}#ecf0f1{% endif %};">
+            <h4 style="margin-bottom: 10px;">🐘 PostgreSQL</h4>
+            <ul style="font-size: 13px; color: #7f8c8d; margin-left: 15px;">
+                <li>Enterprise features</li>
+                <li>Advanced queries</li>
+                <li>ACID compliant</li>
+                <li>Best for large scale</li>
+            </ul>
+            {% if database.type == 'postgresql' %}<span class="badge badge-active" style="margin-top: 10px;">Current</span>{% endif %}
+        </div>
+    </div>
+    
+    <!-- Detailed MySQL Setup Instructions -->
+    <details style="background: white; border-radius: 8px; margin-bottom: 15px;">
+        <summary style="padding: 15px; cursor: pointer; font-weight: 600; color: #2c3e50;">
+            🐬 MySQL Setup Instructions (Click to expand)
+        </summary>
+        <div style="padding: 0 15px 15px 15px;">
+            <h5 style="margin: 15px 0 10px;">Step 1: Install MySQL</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto;">
+# Ubuntu/Debian
+sudo apt update
+sudo apt install mysql-server -y
+sudo systemctl start mysql
+sudo systemctl enable mysql
+
+# Secure the installation
+sudo mysql_secure_installation</pre>
+
+            <h5 style="margin: 15px 0 10px;">Step 2: Create Database & User</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto;">
+# Login to MySQL
+sudo mysql -u root -p
+
+# Run these SQL commands:
+CREATE DATABASE scorpio_resizer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'scorpio'@'localhost' IDENTIFIED BY 'YourSecurePassword123!';
+GRANT ALL PRIVILEGES ON scorpio_resizer.* TO 'scorpio'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;</pre>
+
+            <h5 style="margin: 15px 0 10px;">Step 3: Update .env File</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto;">
+# Edit your .env file
+nano /opt/scorpio-image-resizer/.env
+
+# Change DATABASE_URL to:
+DATABASE_URL=mysql+pymysql://scorpio:YourSecurePassword123!@localhost:3306/scorpio_resizer</pre>
+
+            <h5 style="margin: 15px 0 10px;">Step 4: Restart Application</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto;">
+docker restart scorpio-resizer</pre>
+        </div>
+    </details>
+
+    <!-- Detailed PostgreSQL Setup Instructions -->
+    <details style="background: white; border-radius: 8px; margin-bottom: 15px;">
+        <summary style="padding: 15px; cursor: pointer; font-weight: 600; color: #2c3e50;">
+            🐘 PostgreSQL Setup Instructions (Click to expand)
+        </summary>
+        <div style="padding: 0 15px 15px 15px;">
+            <h5 style="margin: 15px 0 10px;">Step 1: Install PostgreSQL</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto;">
+# Ubuntu/Debian
+sudo apt update
+sudo apt install postgresql postgresql-contrib -y
+sudo systemctl start postgresql
+sudo systemctl enable postgresql</pre>
+
+            <h5 style="margin: 15px 0 10px;">Step 2: Create Database & User</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto;">
+# Switch to postgres user
+sudo -u postgres psql
+
+# Run these SQL commands:
+CREATE DATABASE scorpio_resizer;
+CREATE USER scorpio WITH ENCRYPTED PASSWORD 'YourSecurePassword123!';
+GRANT ALL PRIVILEGES ON DATABASE scorpio_resizer TO scorpio;
+\q</pre>
+
+            <h5 style="margin: 15px 0 10px;">Step 3: Update .env File</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto;">
+DATABASE_URL=postgresql://scorpio:YourSecurePassword123!@localhost:5432/scorpio_resizer</pre>
+
+            <h5 style="margin: 15px 0 10px;">Step 4: Restart Application</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto;">
+docker restart scorpio-resizer</pre>
+        </div>
+    </details>
+
+    <!-- Backup Instructions -->
+    <details style="background: white; border-radius: 8px; margin-bottom: 15px;">
+        <summary style="padding: 15px; cursor: pointer; font-weight: 600; color: #2c3e50;">
+            💾 Backup Instructions (Click to expand)
+        </summary>
+        <div style="padding: 0 15px 15px 15px;">
+            <h5 style="margin: 15px 0 10px;">SQLite Backup</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px;">
+# Simple file copy
+cp /opt/scorpio-image-resizer/data/users.db /backup/users_$(date +%Y%m%d).db</pre>
+
+            <h5 style="margin: 15px 0 10px;">MySQL Backup</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px;">
+# Full backup
+mysqldump -u scorpio -p scorpio_resizer > backup_$(date +%Y%m%d).sql
+
+# Restore
+mysql -u scorpio -p scorpio_resizer < backup_20241126.sql</pre>
+
+            <h5 style="margin: 15px 0 10px;">PostgreSQL Backup</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px;">
+# Full backup
+pg_dump -U scorpio scorpio_resizer > backup_$(date +%Y%m%d).sql
+
+# Restore
+psql -U scorpio scorpio_resizer < backup_20241126.sql</pre>
+
+            <h5 style="margin: 15px 0 10px;">Automated Daily Backup (Cron)</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px;">
+# Edit crontab
+crontab -e
+
+# Add this line (runs at 2 AM daily):
+0 2 * * * cp /opt/scorpio-image-resizer/data/users.db /backup/users_$(date +\%Y\%m\%d).db</pre>
+        </div>
+    </details>
+
+    <!-- Migration Instructions -->
+    <details style="background: white; border-radius: 8px;">
+        <summary style="padding: 15px; cursor: pointer; font-weight: 600; color: #2c3e50;">
+            🔄 Migrate SQLite to MySQL (Click to expand)
+        </summary>
+        <div style="padding: 0 15px 15px 15px;">
+            <h5 style="margin: 15px 0 10px;">Export from SQLite</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px;">
+# Install sqlite3 if needed
+apt install sqlite3
+
+# Export to SQL
+sqlite3 /opt/scorpio-image-resizer/data/users.db .dump > sqlite_export.sql</pre>
+
+            <h5 style="margin: 15px 0 10px;">Convert & Import to MySQL</h5>
+            <pre style="background: #1e293b; color: #10b981; padding: 12px; border-radius: 6px; font-size: 13px;">
+# The app will auto-create tables on first run
+# Just update DATABASE_URL and restart
+
+# For data migration, use a tool like:
+pip install sqlite3-to-mysql
+sqlite3mysql -f /opt/scorpio-image-resizer/data/users.db \
+  -d scorpio_resizer -u scorpio -p</pre>
+        </div>
+    </details>
+</div>
+
+<div class="form-row">
+    <div style="flex: 2;">
+        <h3 style="margin-bottom: 15px;">📊 Storage Usage</h3>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Images: {{ storage.images_count }}</span>
+                <span>{{ storage.images_size }}</span>
+            </div>
+            <div style="background: #ecf0f1; border-radius: 10px; height: 20px; overflow: hidden;">
+                <div style="background: linear-gradient(90deg, #3498db, #2ecc71); height: 100%; width: {{ storage.percent }}%;"></div>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">
+                {{ storage.used }} used of {{ storage.total }} available
+            </div>
+        </div>
+        
+        <h3 style="margin: 25px 0 15px;">🔄 Updates</h3>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+            <p style="margin-bottom: 15px;">Check for updates from the official repository.</p>
+            <button type="button" class="btn btn-primary" onclick="checkUpdates()">🔍 Check for Updates</button>
+            <div id="updateResult" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+    
+    <div style="flex: 1;">
+        <h3 style="margin-bottom: 15px;">🛠️ Maintenance</h3>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+            <form method="POST" action="{{ url_for('admin.clear_cache') }}" style="margin-bottom: 15px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">🗑️ Clear Cache</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.cleanup_images') }}" style="margin-bottom: 15px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">🧹 Cleanup Orphan Images</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.backup_db') }}">
+                <button type="submit" class="btn btn-success" style="width: 100%;">💾 Backup Database</button>
+            </form>
+        </div>
+        
+        <h3 style="margin: 25px 0 15px;">⚠️ Danger Zone</h3>
+        <div style="background: #fdedec; padding: 20px; border-radius: 10px; border: 2px solid #e74c3c;">
+            <form method="POST" action="{{ url_for('admin.reset_all') }}" onsubmit="return confirm('This will DELETE ALL DATA. Type RESET to confirm:') && prompt('Type RESET to confirm') === 'RESET';">
+                <button type="submit" class="btn btn-danger" style="width: 100%;">🔥 Factory Reset</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<h3 style="margin: 25px 0 15px;">📋 Changelog</h3>
+<div style="background: #f8f9fa; padding: 20px; border-radius: 10px; max-height: 300px; overflow-y: auto;">
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; color: #3498db;">v1.0.0 - Initial Release</div>
+        <ul style="margin: 10px 0 0 20px; color: #7f8c8d;">
+            <li>Frame tool with blurred backgrounds</li>
+            <li>Image compression with quality control</li>
+            <li>Resize tool with percentage and custom sizes</li>
+            <li>Format converter (JPG, PNG, WebP, GIF, BMP)</li>
+            <li>Size presets and packs</li>
+            <li>Admin panel with branding customization</li>
+            <li>User management</li>
+            <li>SSL and custom domain support</li>
+        </ul>
+    </div>
+</div>
+
+<h3 style="margin: 25px 0 15px;">📦 Open Source</h3>
+<div style="background: #e8f8f5; padding: 20px; border-radius: 10px;">
+    <p style="margin-bottom: 10px;"><strong>Scorpio Image Resizer</strong> is open source software.</p>
+    <p style="color: #7f8c8d; margin-bottom: 15px;">Licensed under MIT License. Contributions welcome!</p>
+    <a href="https://github.com/scorpio-image-resizer" target="_blank" class="btn btn-primary">⭐ View on GitHub</a>
+</div>
+
+<script>
+function checkUpdates() {
+    document.getElementById('updateResult').innerHTML = '<span style="color: #7f8c8d;">Checking...</span>';
+    fetch('/admin/check-updates')
+        .then(r => r.json())
+        .then(d => {
+            if (d.update_available) {
+                document.getElementById('updateResult').innerHTML = `
+                    <div style="padding: 15px; background: #d5f5e3; border-radius: 8px;">
+                        <strong>🆕 Update Available!</strong><br>
+                        Current: ${d.current} → Latest: ${d.latest}<br>
+                        <a href="${d.download_url}" class="btn btn-success" style="margin-top: 10px;">Download Update</a>
+                    </div>`;
+            } else {
+                document.getElementById('updateResult').innerHTML = '<span style="color: #27ae60;">✓ You are running the latest version!</span>';
+            }
+        })
+        .catch(() => {
+            document.getElementById('updateResult').innerHTML = '<span style="color: #e74c3c;">Failed to check for updates</span>';
+        });
+}
+</script>
+{% endblock %}

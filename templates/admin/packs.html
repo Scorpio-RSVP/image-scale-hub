@@ -1,0 +1,106 @@
+{% extends "admin/base.html" %}
+{% block title %}Packs{% endblock %}
+
+{% block content %}
+<h2 class="section-title">📦 Image Packs</h2>
+<p style="color: #7f8c8d; margin-bottom: 20px;">Packs generate multiple sizes at once. Configure which sizes are included in each pack.</p>
+
+<form id="packForm" style="margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+    <h3 style="margin-bottom: 15px;">➕ Create New Pack</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Pack Name</label>
+            <input type="text" name="name" id="packName" class="form-control" placeholder="Social Media Pack" required>
+        </div>
+        <div class="form-group">
+            <label>Icon</label>
+            <input type="text" name="icon" id="packIcon" class="form-control" placeholder="📱" value="📦">
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Sizes (JSON format)</label>
+        <textarea name="config" id="packConfig" class="form-control" rows="4" placeholder='[{"name": "Instagram", "width": 1080, "height": 1080}, {"name": "Story", "width": 1080, "height": 1920}]' required></textarea>
+        <small style="color: #7f8c8d;">Format: [{"name": "Size Name", "width": 1080, "height": 1920}, ...]</small>
+    </div>
+    <button type="submit" class="btn btn-success">Create Pack</button>
+</form>
+
+<h3 style="margin-bottom: 15px;">Existing Packs</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Icon</th>
+            <th>Name</th>
+            <th>Sizes</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in packs %}
+        <tr>
+            <td style="font-size: 1.5em;">{{ p.icon }}</td>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>
+                {% set config = p.config | tojson | safe %}
+                {{ p.config[:50] }}{% if p.config|length > 50 %}...{% endif %}
+            </td>
+            <td>
+                {% if p.is_active %}
+                <span class="badge badge-active">Active</span>
+                {% else %}
+                <span class="badge badge-inactive">Inactive</span>
+                {% endif %}
+            </td>
+            <td class="actions">
+                <button onclick="togglePack({{ p.id }})" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Toggle</button>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align: center; color: #7f8c8d;">No packs yet. Create one above!</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div style="margin-top: 30px; padding: 20px; background: #e8f4fd; border-radius: 10px;">
+    <h4 style="margin-bottom: 10px;">📋 Example Pack Configurations</h4>
+    <p style="margin-bottom: 10px;"><strong>Social Media Pack:</strong></p>
+    <code style="display: block; background: white; padding: 10px; border-radius: 5px; font-size: 12px;">
+[{"name": "Instagram Square", "width": 1080, "height": 1080}, {"name": "Instagram Story", "width": 1080, "height": 1920}, {"name": "Facebook Post", "width": 1200, "height": 630}]
+    </code>
+    <p style="margin-top: 15px; margin-bottom: 10px;"><strong>All Sizes Pack:</strong></p>
+    <code style="display: block; background: white; padding: 10px; border-radius: 5px; font-size: 12px;">
+[{"name": "Instagram", "width": 1080, "height": 1080}, {"name": "Story", "width": 1080, "height": 1920}, {"name": "Facebook", "width": 1200, "height": 630}, {"name": "Twitter", "width": 1500, "height": 500}, {"name": "YouTube", "width": 1280, "height": 720}]
+    </code>
+</div>
+
+<script>
+document.getElementById('packForm').onsubmit = async function(e) {
+    e.preventDefault();
+    
+    // Validate JSON
+    try {
+        JSON.parse(document.getElementById('packConfig').value);
+    } catch(e) {
+        alert('Invalid JSON format. Please check your sizes configuration.');
+        return;
+    }
+    
+    const form = new FormData(this);
+    const res = await fetch('{{ url_for("admin.create_pack") }}', {method: 'POST', body: form});
+    const data = await res.json();
+    if (data.success) {
+        location.reload();
+    } else {
+        alert(data.error || 'Error creating pack');
+    }
+};
+
+async function togglePack(id) {
+    const res = await fetch('/admin/packs/' + id + '/toggle', {method: 'POST'});
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error);
+}
+</script>
+{% endblock %}

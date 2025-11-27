@@ -1,0 +1,149 @@
+{% extends "admin/base.html" %}
+{% block title %}Storage{% endblock %}
+
+{% block content %}
+<h2 class="section-title">💾 Storage Management</h2>
+
+<div class="form-row" style="margin-bottom: 25px;">
+    <div style="background: linear-gradient(135deg, #3498db 0%, #2ecc71 100%); padding: 25px; border-radius: 12px; color: white; flex: 1;">
+        <div style="font-size: 0.9em; opacity: 0.9;">Total Storage Used</div>
+        <div style="font-size: 2em; font-weight: bold;">{{ "%.2f"|format(total_size / (1024*1024)) }} MB</div>
+        <div style="margin-top: 10px; opacity: 0.8;">{{ total_images }} images</div>
+    </div>
+    <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; flex: 1;">
+        <div style="font-size: 0.9em; color: #7f8c8d;">Default Limit</div>
+        <div style="font-size: 1.5em; font-weight: bold;">{{ settings.get('default_storage_limit_mb', '100') }} MB</div>
+        <div style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">Per user</div>
+    </div>
+    <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; flex: 1;">
+        <div style="font-size: 0.9em; color: #7f8c8d;">Total Users</div>
+        <div style="font-size: 1.5em; font-weight: bold;">{{ user_stats|length }}</div>
+        <div style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">With images</div>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('admin.update_storage_settings') }}" style="margin-bottom: 25px;">
+    <h3 style="margin-bottom: 15px;">⚙️ Storage Settings</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Default Storage Limit (MB)</label>
+            <input type="number" name="default_storage_limit_mb" class="form-control" 
+                   value="{{ settings.get('default_storage_limit_mb', '100') }}" min="10" max="10000">
+            <small style="color: #7f8c8d;">Applied to new users and users without custom limits</small>
+        </div>
+        <div class="form-group">
+            <label>Max Upload Size (MB)</label>
+            <input type="number" name="max_upload_mb" class="form-control" 
+                   value="{{ settings.get('max_upload_mb', '10') }}" min="1" max="100">
+        </div>
+        <div class="form-group">
+            <label>Auto-Delete After (Days)</label>
+            <input type="number" name="auto_delete_days" class="form-control" 
+                   value="{{ settings.get('auto_delete_days', '0') }}" min="0">
+            <small style="color: #7f8c8d;">0 = never delete</small>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">💾 Save Settings</button>
+</form>
+
+<h3 style="margin: 25px 0 15px;">👥 Storage by User</h3>
+<table>
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Images</th>
+            <th>Storage Used</th>
+            <th>Limit</th>
+            <th>Usage</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td><strong>{{ user.username }}</strong></td>
+            <td>{{ user.image_count }}</td>
+            <td>{{ "%.2f"|format(user.storage_used / (1024*1024)) }} MB</td>
+            <td>
+                {% if user.storage_limit == -1 %}
+                <span class="badge badge-admin">Unlimited</span>
+                {% elif user.storage_limit > 0 %}
+                {{ "%.0f"|format(user.storage_limit / (1024*1024)) }} MB
+                {% else %}
+                Default
+                {% endif %}
+            </td>
+            <td>
+                <div style="background: #ecf0f1; border-radius: 10px; height: 20px; width: 100px; overflow: hidden;">
+                    <div style="background: {% if user.storage_percent > 90 %}#e74c3c{% elif user.storage_percent > 70 %}#f39c12{% else %}#27ae60{% endif %}; height: 100%; width: {{ user.storage_percent }}%;"></div>
+                </div>
+                <small>{{ "%.1f"|format(user.storage_percent) }}%</small>
+            </td>
+            <td>
+                <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" 
+                        onclick="editLimit({{ user.id }}, '{{ user.username }}', {{ user.storage_limit }})">
+                    Edit Limit
+                </button>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align: center; color: #7f8c8d;">No users with images</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Edit Limit Modal -->
+<div id="limitModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="background: white; max-width: 400px; margin: 100px auto; padding: 25px; border-radius: 10px;">
+        <h3 style="margin-bottom: 20px;">📊 Edit Storage Limit</h3>
+        <p>User: <strong id="limitUsername"></strong></p>
+        <form method="POST" action="{{ url_for('admin.update_user_storage') }}" id="limitForm">
+            <input type="hidden" name="user_id" id="limitUserId">
+            <div class="form-group">
+                <label>Storage Limit</label>
+                <select name="limit_type" id="limitType" class="form-control" onchange="toggleCustomLimit()">
+                    <option value="default">Use Default</option>
+                    <option value="custom">Custom (MB)</option>
+                    <option value="unlimited">Unlimited</option>
+                </select>
+            </div>
+            <div class="form-group" id="customLimitGroup" style="display: none;">
+                <label>Custom Limit (MB)</label>
+                <input type="number" name="custom_limit_mb" id="customLimitMb" class="form-control" min="10" max="100000">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-success">Save</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editLimit(userId, username, currentLimit) {
+    document.getElementById('limitUserId').value = userId;
+    document.getElementById('limitUsername').textContent = username;
+    
+    if (currentLimit === -1) {
+        document.getElementById('limitType').value = 'unlimited';
+    } else if (currentLimit > 0) {
+        document.getElementById('limitType').value = 'custom';
+        document.getElementById('customLimitMb').value = Math.round(currentLimit / (1024*1024));
+    } else {
+        document.getElementById('limitType').value = 'default';
+    }
+    
+    toggleCustomLimit();
+    document.getElementById('limitModal').style.display = 'block';
+}
+
+function toggleCustomLimit() {
+    const type = document.getElementById('limitType').value;
+    document.getElementById('customLimitGroup').style.display = type === 'custom' ? 'block' : 'none';
+}
+
+function closeModal() {
+    document.getElementById('limitModal').style.display = 'none';
+}
+</script>
+{% endblock %}

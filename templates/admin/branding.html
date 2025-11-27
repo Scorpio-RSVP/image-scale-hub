@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+{% block title %}Branding{% endblock %}
+
+{% block content %}
+<h2 class="section-title">🎨 Branding & Appearance</h2>
+
+<form method="POST" action="{{ url_for('admin.update_branding') }}" enctype="multipart/form-data">
+    <div class="form-row">
+        <div style="flex: 1;">
+            <h3 style="margin-bottom: 15px;">📝 Site Identity</h3>
+            <div class="form-group">
+                <label>Site Name</label>
+                <input type="text" name="site_name" class="form-control" value="{{ settings.get('site_name', 'Scorpio Image Resizer') }}">
+            </div>
+            <div class="form-group">
+                <label>Site Tagline</label>
+                <input type="text" name="site_tagline" class="form-control" value="{{ settings.get('site_tagline', 'Professional Image Tools') }}">
+            </div>
+            <div class="form-group">
+                <label>Footer Text</label>
+                <input type="text" name="footer_text" class="form-control" value="{{ settings.get('footer_text', '© 2024 Scorpio Image Resizer') }}">
+            </div>
+        </div>
+        
+        <div style="flex: 1;">
+            <h3 style="margin-bottom: 15px;">🖼️ Logo & Favicon</h3>
+            <div class="form-group">
+                <label>Logo (PNG/SVG, max 2MB)</label>
+                <input type="file" name="logo" class="form-control" accept="image/*">
+                {% if settings.get('logo_url') %}
+                <div style="margin-top: 10px;">
+                    <img src="{{ settings.get('logo_url') }}" style="max-height: 50px;">
+                    <label style="margin-left: 10px;"><input type="checkbox" name="remove_logo"> Remove</label>
+                </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label>Favicon (ICO/PNG, 32x32 recommended)</label>
+                <input type="file" name="favicon" class="form-control" accept=".ico,.png">
+                {% if settings.get('favicon_url') %}
+                <div style="margin-top: 10px;">
+                    <img src="{{ settings.get('favicon_url') }}" style="max-height: 32px;">
+                    <label style="margin-left: 10px;"><input type="checkbox" name="remove_favicon"> Remove</label>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <h3 style="margin: 25px 0 15px;">🎨 Colors</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Primary Color</label>
+            <input type="color" name="primary_color" class="form-control" style="height: 45px;" value="{{ settings.get('primary_color', '#3498db') }}">
+        </div>
+        <div class="form-group">
+            <label>Secondary Color</label>
+            <input type="color" name="secondary_color" class="form-control" style="height: 45px;" value="{{ settings.get('secondary_color', '#2ecc71') }}">
+        </div>
+        <div class="form-group">
+            <label>Accent Color</label>
+            <input type="color" name="accent_color" class="form-control" style="height: 45px;" value="{{ settings.get('accent_color', '#e74c3c') }}">
+        </div>
+        <div class="form-group">
+            <label>Background Color</label>
+            <input type="color" name="bg_color" class="form-control" style="height: 45px;" value="{{ settings.get('bg_color', '#1a1a2e') }}">
+        </div>
+    </div>
+    
+    <h3 style="margin: 25px 0 15px;">📄 Login Page Text</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Login Title</label>
+            <input type="text" name="login_title" class="form-control" value="{{ settings.get('login_title', 'Welcome Back') }}">
+        </div>
+        <div class="form-group">
+            <label>Login Subtitle</label>
+            <input type="text" name="login_subtitle" class="form-control" value="{{ settings.get('login_subtitle', 'Sign in to continue') }}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Login Page Message (HTML allowed)</label>
+        <textarea name="login_message" class="form-control" rows="3">{{ settings.get('login_message', '') }}</textarea>
+    </div>
+    
+    <h3 style="margin: 25px 0 15px;">📱 Social Links</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Twitter/X URL</label>
+            <input type="url" name="twitter_url" class="form-control" value="{{ settings.get('twitter_url', '') }}" placeholder="https://twitter.com/...">
+        </div>
+        <div class="form-group">
+            <label>Instagram URL</label>
+            <input type="url" name="instagram_url" class="form-control" value="{{ settings.get('instagram_url', '') }}" placeholder="https://instagram.com/...">
+        </div>
+        <div class="form-group">
+            <label>GitHub URL</label>
+            <input type="url" name="github_url" class="form-control" value="{{ settings.get('github_url', '') }}" placeholder="https://github.com/...">
+        </div>
+    </div>
+    
+    <button type="submit" class="btn btn-success" style="margin-top: 20px;">💾 Save Branding</button>
+</form>
+{% endblock %}

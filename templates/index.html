@@ -1,0 +1,1115 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }} - Image Processing Tools{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #e74c3c;
+    --primary-dark: #c0392b;
+    --secondary: #3498db;
+    --success: #27ae60;
+    --dark: #2c3e50;
+    --light: #ecf0f1;
+    --gray: #95a5a6;
+}
+
+.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab { padding: 12px 20px; border: none; background: var(--light); border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--dark); transition: all 0.2s; }
+.tab:hover { background: #d5dbdb; }
+.tab.active { background: var(--primary); color: white; }
+
+.tab-content { display: none; background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.tab-content.active { display: block; }
+
+.section-title { font-size: 1.4em; color: var(--dark); margin-bottom: 8px; }
+.section-desc { color: var(--gray); margin-bottom: 20px; font-size: 14px; }
+
+.upload-area { border: 3px dashed var(--gray); border-radius: 10px; padding: 35px; text-align: center; background: var(--light); cursor: pointer; margin-bottom: 20px; transition: all 0.2s; }
+.upload-area:hover { border-color: var(--primary); background: #fdf2f2; }
+.upload-area.dragover { border-color: var(--primary); background: #fce4e4; }
+.upload-icon { font-size: 42px; margin-bottom: 10px; }
+.upload-label { font-size: 16px; font-weight: 600; color: var(--dark); }
+.upload-hint { color: var(--gray); font-size: 13px; margin-top: 5px; }
+.upload-area input[type="file"] { display: none; }
+.selected-file { display: none; margin-top: 12px; padding: 8px 12px; background: #d5f5e3; border-radius: 6px; color: var(--success); font-weight: 500; font-size: 14px; }
+.selected-file.show { display: inline-block; }
+
+/* Live Preview */
+.live-preview-box { display: none; margin: 20px 0; padding: 20px; background: #1a1a2e; border-radius: 12px; text-align: center; }
+.live-preview-box.show { display: block; }
+.live-preview-title { color: #ff6b6b; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.live-preview-canvas { max-width: 100%; max-height: 400px; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+.preview-info { color: #aaa; font-size: 12px; margin-top: 10px; }
+
+/* Settings */
+.settings-box { background: var(--light); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.control-row { margin-bottom: 18px; }
+.control-row:last-child { margin-bottom: 0; }
+.control-row label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--dark); font-size: 14px; }
+
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider { flex: 1; height: 6px; border-radius: 3px; background: #d5dbdb; -webkit-appearance: none; }
+.slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); cursor: pointer; }
+.slider-val { min-width: 55px; text-align: center; font-weight: 700; color: var(--primary); font-size: 16px; }
+
+/* Mode Toggle */
+.mode-toggle { display: flex; gap: 10px; margin-bottom: 15px; }
+.mode-btn { flex: 1; padding: 12px; border: 2px solid #d5dbdb; background: white; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 600; transition: all 0.2s; }
+.mode-btn:hover { border-color: var(--secondary); }
+.mode-btn.active { border-color: var(--secondary); background: var(--secondary); color: white; }
+.mode-btn .mode-icon { font-size: 20px; display: block; margin-bottom: 5px; }
+
+/* Size Grid */
+.size-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.size-btn { padding: 10px 8px; border: 2px solid #d5dbdb; background: white; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
+.size-btn:hover:not(.disabled) { border-color: var(--primary); background: #fef5f5; }
+.size-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
+.size-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+.size-btn .icon { font-size: 18px; display: block; margin-bottom: 3px; }
+.size-btn .name { display: block; font-weight: 600; font-size: 12px; }
+.size-btn .dims { display: block; font-size: 10px; opacity: 0.7; }
+.size-btn .desc { display: block; font-size: 9px; opacity: 0.6; margin-top: 2px; }
+
+/* Custom Size */
+.custom-size-row { display: flex; gap: 10px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+.custom-size-row input { width: 80px; padding: 8px; border: 2px solid #d5dbdb; border-radius: 6px; font-size: 14px; text-align: center; }
+.custom-size-row input:focus { border-color: var(--primary); outline: none; }
+.custom-size-row span { color: var(--gray); font-weight: 600; }
+
+.text-input { width: 100%; padding: 10px 12px; border: 2px solid #d5dbdb; border-radius: 6px; font-size: 14px; }
+.text-input:focus { border-color: var(--primary); outline: none; }
+
+/* Buttons */
+.btn-main { width: 100%; padding: 14px; border: none; background: var(--primary); color: white; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-bottom: 15px; }
+.btn-main:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); }
+.btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-main.secondary { background: var(--secondary); }
+
+.btn-download { padding: 12px 24px; border: none; background: var(--success); color: white; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; margin: 5px; }
+.btn-download:hover { background: #219a52; }
+
+/* Results */
+.results-box { display: none; background: var(--light); border-radius: 10px; padding: 20px; }
+.results-box.show { display: block; }
+.results-box h3 { margin-bottom: 15px; color: var(--dark); text-align: center; }
+
+.pack-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 15px; }
+.pack-item { background: white; border-radius: 8px; padding: 12px; text-align: center; }
+.pack-item img { max-width: 100%; max-height: 120px; border-radius: 6px; margin-bottom: 8px; }
+.pack-item .name { font-weight: 600; font-size: 13px; color: var(--dark); }
+.pack-item .size { font-size: 11px; color: var(--gray); }
+
+/* History */
+.history-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--light); border-radius: 8px; margin-bottom: 8px; }
+.history-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; }
+.history-info { flex: 1; }
+.history-name { font-weight: 600; font-size: 14px; color: var(--dark); }
+.history-meta { font-size: 12px; color: var(--gray); }
+.history-actions button { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+.btn-del { background: #fce4e4; color: var(--primary); }
+
+.empty-state { text-align: center; padding: 40px; color: var(--gray); }
+
+/* Format selector */
+.format-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.format-btn { padding: 8px 16px; border: 2px solid #d5dbdb; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; }
+.format-btn:hover { border-color: var(--secondary); }
+.format-btn.active { border-color: var(--secondary); background: var(--secondary); color: white; }
+
+.size-display { background: #1a1a2e; color: #ff6b6b; padding: 10px 15px; border-radius: 8px; font-weight: 700; font-size: 16px; text-align: center; margin-top: 10px; }
+
+/* Selected count badge */
+.selected-count { display: inline-block; background: var(--primary); color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 10px; }
+
+@media (max-width: 600px) {
+    .tabs { flex-direction: column; }
+    .tab { width: 100%; text-align: center; }
+    .size-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('frame')">🖼️ Frame Tool</button>
+        <button class="tab" onclick="showTab('compress')">📦 Compress</button>
+        <button class="tab" onclick="showTab('resize')">📏 Resize</button>
+        <button class="tab" onclick="showTab('convert')">🔄 Convert</button>
+    </div>
+    
+    <!-- FRAME TOOL -->
+    <div id="frame-tab" class="tab-content active">
+        <h2 class="section-title">🖼️ Frame Tool - Blurred Background</h2>
+        <p class="section-desc">Create images with your photo centered and blurred background. Perfect for social media posts!</p>
+        
+        <div class="upload-area" id="frameUploadArea">
+            <div class="upload-icon">📸</div>
+            <div class="upload-label">Click to Upload or Drag & Drop</div>
+            <div class="upload-hint">JPG, PNG, GIF, WebP (Max 10MB)</div>
+            <input type="file" id="frameFileInput" accept="image/*">
+            <div class="selected-file" id="frameSelectedFile">✓ <span id="frameFileName"></span></div>
+        </div>
+        
+        <div class="live-preview-box" id="frameLivePreview">
+            <div class="live-preview-title">🔴 LIVE PREVIEW</div>
+            <canvas id="frameCanvas" class="live-preview-canvas"></canvas>
+            <div class="preview-info" id="framePreviewInfo">1080 × 1080 • Blur: 20px</div>
+        </div>
+
+        <div class="settings-box" id="frameSettings" style="display: none;">
+            <!-- Mode Toggle -->
+            <div class="control-row">
+                <label>📋 Selection Mode</label>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" data-mode="single" onclick="setMode('single')">
+                        <span class="mode-icon">1️⃣</span>
+                        Single Size
+                    </button>
+                    <button class="mode-btn" data-mode="multiple" onclick="setMode('multiple')">
+                        <span class="mode-icon">📦</span>
+                        Multiple Sizes <span class="selected-count" id="selectedCount" style="display:none;">0</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <label>📐 Size Presets <span id="modeHint" style="font-weight: normal; color: var(--gray);">(click to select)</span></label>
+                <div class="size-grid" id="frameSizePresets">
+                    {% if presets %}
+                        {% for preset in presets %}
+                        <button class="size-btn{% if loop.first %} active{% endif %}" data-w="{{ preset.width }}" data-h="{{ preset.height }}">
+                            <span class="icon">{{ preset.icon }}</span>
+                            <span class="name">{{ preset.name }}</span>
+                            <span class="dims">{{ preset.width }}×{{ preset.height }}</span>
+                        </button>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Default presets if none in database -->
+                        <button class="size-btn active" data-w="1080" data-h="1080">
+                            <span class="icon">⬜</span>
+                            <span class="name">Square</span>
+                            <span class="dims">1080×1080</span>
+                        </button>
+                        <button class="size-btn" data-w="1080" data-h="1920">
+                            <span class="icon">�</span>
+                            <span class="name">Story</span>
+                            <span class="dims">1080×1920</span>
+                        </button>
+                        <button class="size-btn" data-w="1920" data-h="1080">
+                            <span class="icon">🖥️</span>
+                            <span class="name">Landscape</span>
+                            <span class="dims">1920×1080</span>
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="custom-size-row">
+                    <span>Custom:</span>
+                    <input type="number" id="frameCustomW" value="1080" min="100" max="4000"> 
+                    <span>×</span>
+                    <input type="number" id="frameCustomH" value="1080" min="100" max="4000">
+                    <button class="size-btn" style="padding: 8px 15px;" onclick="applyCustomSize()">Apply</button>
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <label>🌫️ Blur Amount</label>
+                <div class="slider-row">
+                    <input type="range" id="frameBlur" class="slider" min="5" max="60" value="20">
+                    <span class="slider-val" id="frameBlurVal">20px</span>
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <label>📝 Base Filename (size added automatically)</label>
+                <input type="text" id="frameFilename" class="text-input" placeholder="my-image">
+                <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">Example: "flyer" → "flyer_1080x1920.jpg"</div>
+            </div>
+            
+            <div class="control-row">
+                <label>📄 Export Format</label>
+                <div class="format-row" id="frameFormatRow">
+                    <button class="format-btn active" data-format="jpeg">JPG</button>
+                    <button class="format-btn" data-format="png">PNG</button>
+                    <button class="format-btn" data-format="webp">WebP</button>
+                </div>
+            </div>
+        </div>
+        
+        <button class="btn-main" id="frameDownloadBtn" disabled>💾 Download Image</button>
+        
+        <div class="results-box" id="frameResults">
+            <h3>📦 Generated Images</h3>
+            <div class="pack-results" id="framePackItems"></div>
+            <div style="text-align: center;">
+                <button class="btn-download" id="frameDownloadAll">💾 Download All</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- COMPRESS -->
+    <div id="compress-tab" class="tab-content">
+        <h2 class="section-title">📦 Compress Image</h2>
+        <p class="section-desc">Reduce file size. Live preview shows quality changes.</p>
+        
+        <div class="upload-area" id="compressUploadArea">
+            <div class="upload-icon">📦</div>
+            <div class="upload-label">Click to Upload or Drag & Drop</div>
+            <input type="file" id="compressFileInput" accept="image/*">
+            <div class="selected-file" id="compressSelectedFile">✓ <span id="compressFileName"></span></div>
+        </div>
+        
+        <div class="live-preview-box" id="compressLivePreview">
+            <div class="live-preview-title">🔴 LIVE PREVIEW</div>
+            <img id="compressPreviewImg" class="live-preview-canvas">
+            <div class="preview-info" id="compressPreviewInfo">Quality: 80%</div>
+        </div>
+
+        <div class="settings-box" id="compressSettings" style="display: none;">
+            <div class="control-row">
+                <label>🎚️ Quality</label>
+                <div class="slider-row">
+                    <input type="range" id="compressQuality" class="slider" min="10" max="100" value="80">
+                    <span class="slider-val" id="compressQualityVal">80%</span>
+                </div>
+            </div>
+            <div class="control-row">
+                <label>📝 Filename</label>
+                <input type="text" id="compressFilename" class="text-input" placeholder="compressed">
+            </div>
+            <div class="control-row">
+                <label>📄 Export Format</label>
+                <div class="format-row" id="compressFormatRow">
+                    <button class="format-btn active" data-format="jpeg">JPG</button>
+                    <button class="format-btn" data-format="png">PNG</button>
+                    <button class="format-btn" data-format="webp">WebP</button>
+                </div>
+            </div>
+        </div>
+        
+        <button class="btn-main secondary" id="compressBtn" disabled>📦 Compress & Download</button>
+    </div>
+    
+    <!-- RESIZE -->
+    <div id="resize-tab" class="tab-content">
+        <h2 class="section-title">📏 Resize Image</h2>
+        <p class="section-desc">Scale image by percentage or set custom dimensions.</p>
+        
+        <div class="upload-area" id="resizeUploadArea">
+            <div class="upload-icon">📏</div>
+            <div class="upload-label">Click to Upload or Drag & Drop</div>
+            <input type="file" id="resizeFileInput" accept="image/*">
+            <div class="selected-file" id="resizeSelectedFile">✓ <span id="resizeFileName"></span></div>
+        </div>
+        
+        <div class="live-preview-box" id="resizeLivePreview">
+            <div class="live-preview-title">📷 Preview</div>
+            <img id="resizePreviewImg" class="live-preview-canvas">
+            <div class="preview-info" id="resizePreviewInfo">--</div>
+        </div>
+
+        <div class="settings-box" id="resizeSettings" style="display: none;">
+            <div class="control-row">
+                <label>📐 Resize Method</label>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" data-mode="percent" onclick="setResizeMode('percent')">
+                        <span class="mode-icon">📊</span>
+                        Percentage
+                    </button>
+                    <button class="mode-btn" data-mode="custom" onclick="setResizeMode('custom')">
+                        <span class="mode-icon">📐</span>
+                        Custom Size
+                    </button>
+                </div>
+            </div>
+            
+            <div id="resizePercentMode">
+                <div class="control-row">
+                    <label>📊 Scale</label>
+                    <div class="slider-row">
+                        <input type="range" id="resizePercent" class="slider" min="10" max="200" value="50">
+                        <span class="slider-val" id="resizePercentVal">50%</span>
+                    </div>
+                </div>
+                <div class="size-display" id="resizeSizeDisplay">Output: -- × --</div>
+            </div>
+            
+            <div id="resizeCustomMode" style="display: none;">
+                <div class="control-row">
+                    <label>📐 Custom Dimensions</label>
+                    <div class="custom-size-row">
+                        <span>Width:</span>
+                        <input type="number" id="resizeCustomW" value="800" min="10" max="8000">
+                        <span>×</span>
+                        <span>Height:</span>
+                        <input type="number" id="resizeCustomH" value="600" min="10" max="8000">
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label><input type="checkbox" id="resizeLockRatio" checked> 🔒 Lock aspect ratio</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <label>📝 Filename</label>
+                <input type="text" id="resizeFilename" class="text-input" placeholder="resized">
+            </div>
+            <div class="control-row">
+                <label>📄 Export Format</label>
+                <div class="format-row" id="resizeFormatRow">
+                    <button class="format-btn active" data-format="jpeg">JPG</button>
+                    <button class="format-btn" data-format="png">PNG</button>
+                    <button class="format-btn" data-format="webp">WebP</button>
+                </div>
+            </div>
+        </div>
+        
+        <button class="btn-main secondary" id="resizeBtn" disabled>📏 Resize & Download</button>
+    </div>
+    
+    <!-- CONVERT -->
+    <div id="convert-tab" class="tab-content">
+        <h2 class="section-title">🔄 Convert Format</h2>
+        <p class="section-desc">Change image format between JPG, PNG, WebP, and more.</p>
+        
+        <div class="upload-area" id="convertUploadArea">
+            <div class="upload-icon">🔄</div>
+            <div class="upload-label">Click to Upload or Drag & Drop</div>
+            <input type="file" id="convertFileInput" accept="image/*">
+            <div class="selected-file" id="convertSelectedFile">✓ <span id="convertFileName"></span></div>
+        </div>
+        
+        <div class="live-preview-box" id="convertLivePreview">
+            <div class="live-preview-title">📷 Preview</div>
+            <img id="convertPreviewImg" class="live-preview-canvas">
+            <div class="preview-info" id="convertPreviewInfo">--</div>
+        </div>
+
+        <div class="settings-box" id="convertSettings" style="display: none;">
+            <div class="control-row">
+                <label>📄 Convert To</label>
+                <div class="format-row" id="convertFormatRow">
+                    <button class="format-btn active" data-format="jpeg">JPG</button>
+                    <button class="format-btn" data-format="png">PNG</button>
+                    <button class="format-btn" data-format="webp">WebP</button>
+                    <button class="format-btn" data-format="gif">GIF</button>
+                    <button class="format-btn" data-format="bmp">BMP</button>
+                </div>
+            </div>
+            <div class="control-row" id="convertQualityRow">
+                <label>🎚️ Quality (for JPG/WebP)</label>
+                <div class="slider-row">
+                    <input type="range" id="convertQuality" class="slider" min="10" max="100" value="90">
+                    <span class="slider-val" id="convertQualityVal">90%</span>
+                </div>
+            </div>
+            <div class="control-row">
+                <label>📝 Filename</label>
+                <input type="text" id="convertFilename" class="text-input" placeholder="converted">
+            </div>
+        </div>
+        
+        <button class="btn-main secondary" id="convertBtn" disabled>🔄 Convert & Download</button>
+    </div>
+    
+</div>
+
+<script>
+// ========== STATE ==========
+let frameImg = null, frameImgData = null;
+let frameW = 1080, frameH = 1080, frameBlur = 20;
+let frameFormat = 'jpeg';
+let selectionMode = 'single';
+let selectedSizes = [{w: 1080, h: 1080, name: 'Square'}];
+
+let compressImg = null, compressImgData = null;
+let compressFormat = 'jpeg';
+
+let resizeImg = null, resizeImgData = null;
+let resizeMode = 'percent';
+let resizeFormat = 'jpeg';
+
+let convertImg = null, convertImgData = null;
+let convertFormat = 'jpeg';
+
+// ========== TABS ==========
+function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.getElementById(name + '-tab').classList.add('active');
+    event.target.classList.add('active');
+    if (name === 'history') loadHistory();
+}
+
+// ========== MODE TOGGLE ==========
+function setMode(mode) {
+    selectionMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+    
+    const hint = document.getElementById('modeHint');
+    if (mode === 'single') {
+        hint.textContent = '(click to select one)';
+        // Keep only first selected
+        if (selectedSizes.length > 0) {
+            const first = selectedSizes[0];
+            selectedSizes = [first];
+            updateSizeButtons();
+        }
+        document.getElementById('selectedCount').style.display = 'none';
+    } else {
+        hint.textContent = '(click to select multiple)';
+        document.getElementById('selectedCount').style.display = 'inline-block';
+        updateSelectedCount();
+    }
+}
+
+function updateSelectedCount() {
+    document.getElementById('selectedCount').textContent = selectedSizes.length;
+}
+
+function updateSizeButtons() {
+    document.querySelectorAll('#frameSizePresets .size-btn').forEach(btn => {
+        if (!btn.dataset.w) return;
+        const w = parseInt(btn.dataset.w);
+        const h = parseInt(btn.dataset.h);
+        const isSelected = selectedSizes.some(s => s.w === w && s.h === h);
+        
+        if (selectionMode === 'single') {
+            btn.classList.toggle('active', isSelected);
+            btn.classList.remove('disabled');
+        } else {
+            btn.classList.toggle('active', isSelected);
+            btn.classList.remove('disabled');
+        }
+    });
+    
+    // Update preview with first selected
+    if (selectedSizes.length > 0) {
+        frameW = selectedSizes[0].w;
+        frameH = selectedSizes[0].h;
+        updateFramePreview();
+    }
+}
+
+// ========== FRAME TOOL ==========
+function getBaseName(filename) {
+    // Remove extension and return base name
+    return filename.replace(/\.[^/.]+$/, '');
+}
+
+function handleFrameUpload(file) {
+    if (!file || !file.type.startsWith('image/')) return alert('Select an image');
+    if (file.size > 10*1024*1024) return alert('Max 10MB');
+    
+    document.getElementById('frameFileName').textContent = file.name;
+    document.getElementById('frameSelectedFile').classList.add('show');
+    
+    // Auto-fill filename from uploaded file
+    document.getElementById('frameFilename').value = getBaseName(file.name);
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+        frameImgData = e.target.result;
+        const img = new Image();
+        img.onload = () => {
+            frameImg = img;
+            document.getElementById('frameSettings').style.display = 'block';
+            document.getElementById('frameLivePreview').classList.add('show');
+            document.getElementById('frameDownloadBtn').disabled = false;
+            updateFramePreview();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateFramePreview() {
+    if (!frameImg) return;
+    
+    const canvas = document.getElementById('frameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const maxPreview = 450;
+    const scale = Math.min(maxPreview / frameW, maxPreview / frameH, 1);
+    const pw = Math.round(frameW * scale);
+    const ph = Math.round(frameH * scale);
+    
+    canvas.width = pw;
+    canvas.height = ph;
+    
+    const img = frameImg;
+    const imgAspect = img.width / img.height;
+    const canvasAspect = pw / ph;
+    
+    let dw, dh;
+    // Fill as much of the frame as possible with the clear image
+    // Only show blur on the edges where the aspect ratio doesn't match
+    if (imgAspect > canvasAspect) {
+        // Image is wider - fit to width, blur top/bottom
+        dw = pw;
+        dh = dw / imgAspect;
+    } else {
+        // Image is taller - fit to height, blur left/right
+        dh = ph;
+        dw = dh * imgAspect;
+    }
+    const dx = (pw - dw) / 2;
+    const dy = (ph - dh) / 2;
+    
+    // Draw blurred background (stretched to fill)
+    const scaledBlur = frameBlur * scale;
+    ctx.filter = `blur(${scaledBlur}px)`;
+    ctx.drawImage(img, -pw*0.1, -ph*0.1, pw*1.2, ph*1.2);
+    ctx.filter = 'none';
+    
+    // Draw clear image as large as possible
+    ctx.drawImage(img, dx, dy, dw, dh);
+    
+    document.getElementById('framePreviewInfo').textContent = `${frameW} × ${frameH} • Blur: ${frameBlur}px`;
+}
+
+function generateFrame(w, h) {
+    if (!frameImg) return null;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = w;
+    canvas.height = h;
+    
+    const img = frameImg;
+    const imgAspect = img.width / img.height;
+    const canvasAspect = w / h;
+    
+    // Fill as much of the frame as possible with the clear image
+    let dw, dh;
+    if (imgAspect > canvasAspect) {
+        // Image is wider - fit to width, blur top/bottom
+        dw = w;
+        dh = dw / imgAspect;
+    } else {
+        // Image is taller - fit to height, blur left/right
+        dh = h;
+        dw = dh * imgAspect;
+    }
+    const dx = (w - dw) / 2;
+    const dy = (h - dh) / 2;
+    
+    // Draw blurred background
+    ctx.filter = `blur(${frameBlur}px)`;
+    ctx.drawImage(img, -w*0.1, -h*0.1, w*1.2, h*1.2);
+    ctx.filter = 'none';
+    
+    // Draw clear image as large as possible
+    ctx.drawImage(img, dx, dy, dw, dh);
+    
+    const quality = frameFormat === 'png' ? 1 : 0.92;
+    return canvas.toDataURL(`image/${frameFormat}`, quality);
+}
+
+function getFormatExt(format) {
+    return format === 'jpeg' ? 'jpg' : format;
+}
+
+function downloadFrame() {
+    if (!frameImg) {
+        alert('Please upload an image first');
+        return;
+    }
+    
+    const baseName = document.getElementById('frameFilename').value || 'image';
+    const ext = getFormatExt(frameFormat);
+    const results = [];
+    
+    selectedSizes.forEach(size => {
+        const dataUrl = generateFrame(size.w, size.h);
+        if (dataUrl) {
+            const filename = `${baseName}_${size.w}x${size.h}.${ext}`;
+            results.push({dataUrl, filename, name: size.name || `${size.w}×${size.h}`, w: size.w, h: size.h});
+            try { saveToHistory(dataUrl, filename, 'frame'); } catch(e) { console.log('History save failed'); }
+        }
+    });
+    
+    if (results.length === 1) {
+        downloadFile(results[0].dataUrl, results[0].filename);
+    } else {
+        // Show results
+        const container = document.getElementById('framePackItems');
+        container.innerHTML = results.map(r => `
+            <div class="pack-item">
+                <img src="${r.dataUrl}">
+                <div class="name">${r.name}</div>
+                <div class="size">${r.w}×${r.h}</div>
+                <button class="btn-download" style="padding: 6px 12px; font-size: 12px;" onclick="downloadFile('${r.dataUrl}', '${r.filename}')">💾</button>
+            </div>
+        `).join('');
+        
+        document.getElementById('frameResults').classList.add('show');
+        
+        document.getElementById('frameDownloadAll').onclick = () => {
+            results.forEach((r, i) => setTimeout(() => downloadFile(r.dataUrl, r.filename), i * 300));
+        };
+    }
+}
+
+function applyCustomSize() {
+    const w = parseInt(document.getElementById('frameCustomW').value) || 1080;
+    const h = parseInt(document.getElementById('frameCustomH').value) || 1080;
+    
+    if (selectionMode === 'single') {
+        selectedSizes = [{w, h, name: 'Custom'}];
+        document.querySelectorAll('#frameSizePresets .size-btn').forEach(b => b.classList.remove('active'));
+    } else {
+        if (!selectedSizes.some(s => s.w === w && s.h === h)) {
+            selectedSizes.push({w, h, name: 'Custom'});
+        }
+    }
+    
+    frameW = w;
+    frameH = h;
+    updateSelectedCount();
+    updateFramePreview();
+}
+
+// ========== COMPRESS ==========
+function handleCompressUpload(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (file.size > 10*1024*1024) return alert('Max 10MB');
+    
+    compressImgData = file;
+    document.getElementById('compressFileName').textContent = file.name;
+    document.getElementById('compressSelectedFile').classList.add('show');
+    
+    // Auto-fill filename from uploaded file
+    document.getElementById('compressFilename').value = getBaseName(file.name) + '-compressed';
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+            compressImg = img;
+            document.getElementById('compressSettings').style.display = 'block';
+            document.getElementById('compressLivePreview').classList.add('show');
+            document.getElementById('compressBtn').disabled = false;
+            updateCompressPreview();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateCompressPreview() {
+    if (!compressImg) return;
+    
+    const quality = document.getElementById('compressQuality').value / 100;
+    const canvas = document.createElement('canvas');
+    canvas.width = compressImg.width;
+    canvas.height = compressImg.height;
+    canvas.getContext('2d').drawImage(compressImg, 0, 0);
+    
+    const dataUrl = canvas.toDataURL(`image/${compressFormat}`, quality);
+    document.getElementById('compressPreviewImg').src = dataUrl;
+    
+    const estSize = Math.round((dataUrl.length - 23) * 0.75);
+    document.getElementById('compressPreviewInfo').textContent = `Quality: ${Math.round(quality*100)}% • Est: ${formatSize(estSize)} • ${compressImg.width}×${compressImg.height}`;
+}
+
+function doCompress() {
+    if (!compressImg) return;
+    
+    const quality = document.getElementById('compressQuality').value / 100;
+    const canvas = document.createElement('canvas');
+    canvas.width = compressImg.width;
+    canvas.height = compressImg.height;
+    canvas.getContext('2d').drawImage(compressImg, 0, 0);
+    
+    const ext = getFormatExt(compressFormat);
+    const dataUrl = canvas.toDataURL(`image/${compressFormat}`, quality);
+    const filename = (document.getElementById('compressFilename').value || 'compressed') + '.' + ext;
+    
+    downloadFile(dataUrl, filename);
+    saveToHistory(dataUrl, filename, 'compress');
+}
+
+// ========== RESIZE ==========
+function handleResizeUpload(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (file.size > 10*1024*1024) return alert('Max 10MB');
+    
+    resizeImgData = file;
+    document.getElementById('resizeFileName').textContent = file.name;
+    document.getElementById('resizeSelectedFile').classList.add('show');
+    
+    // Auto-fill filename from uploaded file
+    document.getElementById('resizeFilename').value = getBaseName(file.name) + '-resized';
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+            resizeImg = img;
+            document.getElementById('resizeSettings').style.display = 'block';
+            document.getElementById('resizeLivePreview').classList.add('show');
+            document.getElementById('resizeBtn').disabled = false;
+            document.getElementById('resizePreviewImg').src = e.target.result;
+            document.getElementById('resizePreviewInfo').textContent = `Original: ${img.width} × ${img.height}`;
+            document.getElementById('resizeCustomW').value = img.width;
+            document.getElementById('resizeCustomH').value = img.height;
+            updateResizeSizeDisplay();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function setResizeMode(mode) {
+    resizeMode = mode;
+    document.querySelectorAll('#resize-tab .mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`#resize-tab .mode-btn[data-mode="${mode}"]`).classList.add('active');
+    
+    document.getElementById('resizePercentMode').style.display = mode === 'percent' ? 'block' : 'none';
+    document.getElementById('resizeCustomMode').style.display = mode === 'custom' ? 'block' : 'none';
+}
+
+function updateResizeSizeDisplay() {
+    if (!resizeImg) return;
+    const scale = document.getElementById('resizePercent').value / 100;
+    const nw = Math.round(resizeImg.width * scale);
+    const nh = Math.round(resizeImg.height * scale);
+    document.getElementById('resizeSizeDisplay').textContent = `Output: ${nw} × ${nh}`;
+}
+
+function doResize() {
+    if (!resizeImg) return;
+    
+    let nw, nh;
+    if (resizeMode === 'percent') {
+        const scale = document.getElementById('resizePercent').value / 100;
+        nw = Math.round(resizeImg.width * scale);
+        nh = Math.round(resizeImg.height * scale);
+    } else {
+        nw = parseInt(document.getElementById('resizeCustomW').value) || resizeImg.width;
+        nh = parseInt(document.getElementById('resizeCustomH').value) || resizeImg.height;
+    }
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = nw;
+    canvas.height = nh;
+    canvas.getContext('2d').drawImage(resizeImg, 0, 0, nw, nh);
+    
+    const quality = resizeFormat === 'png' ? 1 : 0.92;
+    const ext = getFormatExt(resizeFormat);
+    const dataUrl = canvas.toDataURL(`image/${resizeFormat}`, quality);
+    const filename = (document.getElementById('resizeFilename').value || 'resized') + '.' + ext;
+    
+    downloadFile(dataUrl, filename);
+    saveToHistory(dataUrl, filename, 'resize');
+}
+
+// ========== CONVERT ==========
+let convertOriginalSize = 0;
+
+function handleConvertUpload(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (file.size > 10*1024*1024) return alert('Max 10MB');
+    
+    convertImgData = file;
+    convertOriginalSize = file.size;
+    document.getElementById('convertFileName').textContent = file.name;
+    document.getElementById('convertSelectedFile').classList.add('show');
+    
+    // Auto-fill filename from uploaded file
+    document.getElementById('convertFilename').value = getBaseName(file.name);
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+            convertImg = img;
+            document.getElementById('convertSettings').style.display = 'block';
+            document.getElementById('convertLivePreview').classList.add('show');
+            document.getElementById('convertBtn').disabled = false;
+            
+            const origFormat = file.type.split('/')[1].toUpperCase();
+            document.getElementById('convertPreviewInfo').textContent = `Original: ${origFormat} • ${img.width}×${img.height} • ${formatSize(file.size)}`;
+            
+            // Initial preview
+            updateConvertPreview();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateConvertPreview() {
+    if (!convertImg) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = convertImg.width;
+    canvas.height = convertImg.height;
+    canvas.getContext('2d').drawImage(convertImg, 0, 0);
+    
+    const quality = document.getElementById('convertQuality').value / 100;
+    const dataUrl = canvas.toDataURL(`image/${convertFormat}`, quality);
+    
+    // Update preview image
+    document.getElementById('convertPreviewImg').src = dataUrl;
+    
+    // Calculate estimated file size
+    const estSize = Math.round((dataUrl.length - 23) * 0.75);
+    const savings = convertOriginalSize > 0 ? Math.round((1 - estSize / convertOriginalSize) * 100) : 0;
+    const savingsText = savings > 0 ? ` (${savings}% smaller)` : savings < 0 ? ` (${Math.abs(savings)}% larger)` : '';
+    
+    const formatName = convertFormat.toUpperCase() === 'JPEG' ? 'JPG' : convertFormat.toUpperCase();
+    document.getElementById('convertPreviewInfo').textContent = 
+        `${formatName} • Quality: ${Math.round(quality*100)}% • Est: ${formatSize(estSize)}${savingsText}`;
+}
+
+function doConvert() {
+    if (!convertImg) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = convertImg.width;
+    canvas.height = convertImg.height;
+    canvas.getContext('2d').drawImage(convertImg, 0, 0);
+    
+    const quality = document.getElementById('convertQuality').value / 100;
+    const ext = getFormatExt(convertFormat);
+    const dataUrl = canvas.toDataURL(`image/${convertFormat}`, quality);
+    const filename = (document.getElementById('convertFilename').value || 'converted') + '.' + ext;
+    
+    downloadFile(dataUrl, filename);
+    saveToHistory(dataUrl, filename, 'convert');
+}
+
+// ========== HISTORY ==========
+function saveToHistory(dataUrl, filename, type, original = null) {
+    let h = JSON.parse(localStorage.getItem('imgHistory') || '[]');
+    h.unshift({dataUrl, filename, type, original, ts: Date.now()});
+    if (h.length > 30) h = h.slice(0, 30);
+    localStorage.setItem('imgHistory', JSON.stringify(h));
+}
+
+function loadHistory() {
+    const h = JSON.parse(localStorage.getItem('imgHistory') || '[]');
+    const el = document.getElementById('historyList');
+    
+    if (!h.length) {
+        el.innerHTML = '<div class="empty-state">No files yet.</div>';
+        return;
+    }
+    
+    el.innerHTML = h.map((item, i) => `
+        <div class="history-item">
+            <img src="${item.dataUrl}" class="history-thumb">
+            <div class="history-info">
+                <div class="history-name">${item.filename}</div>
+                <div class="history-meta">${item.type} • ${new Date(item.ts).toLocaleDateString()}</div>
+            </div>
+            <div class="history-actions">
+                <button class="btn-download" onclick="downloadFile('${item.dataUrl}', '${item.filename}')">💾</button>
+                ${item.original ? `<button class="btn-download" onclick="downloadFile('${item.original}', 'original.png')">📷</button>` : ''}
+                <button class="btn-del" onclick="deleteHistory(${i})">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function deleteHistory(i) {
+    let h = JSON.parse(localStorage.getItem('imgHistory') || '[]');
+    h.splice(i, 1);
+    localStorage.setItem('imgHistory', JSON.stringify(h));
+    loadHistory();
+}
+
+// ========== UTILS ==========
+function downloadFile(dataUrl, filename) {
+    try {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } catch(e) {
+        console.error('Download failed:', e);
+        // Fallback: open in new tab
+        window.open(dataUrl, '_blank');
+    }
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/1024/1024).toFixed(2) + ' MB';
+}
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', () => {
+    // Frame tool
+    const frameArea = document.getElementById('frameUploadArea');
+    const frameInput = document.getElementById('frameFileInput');
+    frameArea.onclick = () => frameInput.click();
+    frameInput.onchange = e => e.target.files[0] && handleFrameUpload(e.target.files[0]);
+    
+    document.getElementById('frameBlur').oninput = function() {
+        frameBlur = parseInt(this.value);
+        document.getElementById('frameBlurVal').textContent = frameBlur + 'px';
+        updateFramePreview();
+    };
+    
+    // Size buttons
+    document.querySelectorAll('#frameSizePresets .size-btn').forEach(btn => {
+        if (!btn.dataset.w) return;
+        btn.onclick = function() {
+            const w = parseInt(this.dataset.w);
+            const h = parseInt(this.dataset.h);
+            const name = this.querySelector('.name').textContent;
+            
+            if (selectionMode === 'single') {
+                selectedSizes = [{w, h, name}];
+                document.querySelectorAll('#frameSizePresets .size-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            } else {
+                const idx = selectedSizes.findIndex(s => s.w === w && s.h === h);
+                if (idx >= 0) {
+                    selectedSizes.splice(idx, 1);
+                    this.classList.remove('active');
+                } else {
+                    selectedSizes.push({w, h, name});
+                    this.classList.add('active');
+                }
+                updateSelectedCount();
+            }
+            
+            if (selectedSizes.length > 0) {
+                frameW = selectedSizes[0].w;
+                frameH = selectedSizes[0].h;
+                document.getElementById('frameCustomW').value = frameW;
+                document.getElementById('frameCustomH').value = frameH;
+                updateFramePreview();
+            }
+        };
+    });
+    
+    document.getElementById('frameDownloadBtn').onclick = downloadFrame;
+    
+    // Frame format buttons
+    document.querySelectorAll('#frameFormatRow .format-btn').forEach(btn => {
+        btn.onclick = function() {
+            document.querySelectorAll('#frameFormatRow .format-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            frameFormat = this.dataset.format;
+        };
+    });
+    
+    // Compress
+    const compressArea = document.getElementById('compressUploadArea');
+    const compressInput = document.getElementById('compressFileInput');
+    compressArea.onclick = () => compressInput.click();
+    compressInput.onchange = e => e.target.files[0] && handleCompressUpload(e.target.files[0]);
+    
+    document.getElementById('compressQuality').oninput = function() {
+        document.getElementById('compressQualityVal').textContent = this.value + '%';
+        updateCompressPreview();
+    };
+    
+    document.getElementById('compressBtn').onclick = doCompress;
+    
+    // Compress format buttons
+    document.querySelectorAll('#compressFormatRow .format-btn').forEach(btn => {
+        btn.onclick = function() {
+            document.querySelectorAll('#compressFormatRow .format-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            compressFormat = this.dataset.format;
+            updateCompressPreview();
+        };
+    });
+    
+    // Resize
+    const resizeArea = document.getElementById('resizeUploadArea');
+    const resizeInput = document.getElementById('resizeFileInput');
+    resizeArea.onclick = () => resizeInput.click();
+    resizeInput.onchange = e => e.target.files[0] && handleResizeUpload(e.target.files[0]);
+    
+    document.getElementById('resizePercent').oninput = function() {
+        document.getElementById('resizePercentVal').textContent = this.value + '%';
+        updateResizeSizeDisplay();
+    };
+    
+    document.getElementById('resizeBtn').onclick = doResize;
+    
+    // Resize format buttons
+    document.querySelectorAll('#resizeFormatRow .format-btn').forEach(btn => {
+        btn.onclick = function() {
+            document.querySelectorAll('#resizeFormatRow .format-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            resizeFormat = this.dataset.format;
+        };
+    });
+    
+    // Resize custom size with aspect ratio lock
+    const resizeCustomW = document.getElementById('resizeCustomW');
+    const resizeCustomH = document.getElementById('resizeCustomH');
+    let resizeAspect = 1;
+    
+    resizeCustomW.oninput = function() {
+        if (resizeImg && document.getElementById('resizeLockRatio').checked) {
+            resizeAspect = resizeImg.width / resizeImg.height;
+            resizeCustomH.value = Math.round(this.value / resizeAspect);
+        }
+    };
+    resizeCustomH.oninput = function() {
+        if (resizeImg && document.getElementById('resizeLockRatio').checked) {
+            resizeAspect = resizeImg.width / resizeImg.height;
+            resizeCustomW.value = Math.round(this.value * resizeAspect);
+        }
+    };
+    
+    // Convert
+    const convertArea = document.getElementById('convertUploadArea');
+    const convertInput = document.getElementById('convertFileInput');
+    convertArea.onclick = () => convertInput.click();
+    convertInput.onchange = e => e.target.files[0] && handleConvertUpload(e.target.files[0]);
+    
+    document.getElementById('convertQuality').oninput = function() {
+        document.getElementById('convertQualityVal').textContent = this.value + '%';
+        updateConvertPreview();
+    };
+    
+    document.getElementById('convertBtn').onclick = doConvert;
+    
+    // Convert format buttons
+    document.querySelectorAll('#convertFormatRow .format-btn').forEach(btn => {
+        btn.onclick = function() {
+            document.querySelectorAll('#convertFormatRow .format-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            convertFormat = this.dataset.format;
+            // Show/hide quality for formats that support it
+            const showQuality = ['jpeg', 'webp'].includes(convertFormat);
+            document.getElementById('convertQualityRow').style.display = showQuality ? 'block' : 'none';
+            updateConvertPreview();
+        };
+    });
+    
+    // Drag & drop
+    ['frame', 'compress', 'resize', 'convert'].forEach(tool => {
+        const area = document.getElementById(tool + 'UploadArea');
+        area.ondragover = e => { e.preventDefault(); area.classList.add('dragover'); };
+        area.ondragleave = () => area.classList.remove('dragover');
+        area.ondrop = e => {
+            e.preventDefault();
+            area.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (tool === 'frame') handleFrameUpload(file);
+            else if (tool === 'compress') handleCompressUpload(file);
+            else if (tool === 'resize') handleResizeUpload(file);
+            else handleConvertUpload(file);
+        };
+    });
+});
+</script>
+{% endblock %}

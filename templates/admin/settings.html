@@ -1,0 +1,157 @@
+{% extends "admin/base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h2 class="section-title">⚙️ Site Settings</h2>
+
+<!-- Current Configuration Status -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+    <div style="background: #e8f4fd; padding: 20px; border-radius: 10px; text-align: center;">
+        <div style="font-size: 24px; margin-bottom: 5px;">🗄️</div>
+        <div style="font-weight: 600; color: #2c3e50;">Database</div>
+        <div style="color: #3498db; font-size: 14px;">{{ config.get('SQLALCHEMY_DATABASE_URI', 'sqlite')[0:20] }}...</div>
+    </div>
+    <div style="background: {% if settings.get('ssl_enabled') %}#d5f5e3{% else %}#fef9e7{% endif %}; padding: 20px; border-radius: 10px; text-align: center;">
+        <div style="font-size: 24px; margin-bottom: 5px;">🔒</div>
+        <div style="font-weight: 600; color: #2c3e50;">SSL</div>
+        <div style="color: {% if settings.get('ssl_enabled') %}#27ae60{% else %}#f39c12{% endif %}; font-size: 14px;">
+            {% if settings.get('ssl_enabled') %}Enabled{% else %}Disabled{% endif %}
+        </div>
+    </div>
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; text-align: center;">
+        <div style="font-size: 24px; margin-bottom: 5px;">🌐</div>
+        <div style="font-weight: 600; color: #2c3e50;">Domain</div>
+        <div style="color: #7f8c8d; font-size: 14px;">{{ settings.get('custom_domain', 'Not configured') or 'Not configured' }}</div>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('admin.update_settings') }}">
+    <div class="form-row">
+        <div style="flex: 1;">
+            <h3 style="margin-bottom: 15px;">🌐 Domain & SSL</h3>
+            <div class="form-group">
+                <label>Custom Domain</label>
+                <input type="text" name="custom_domain" class="form-control" value="{{ settings.get('custom_domain', '') }}" placeholder="images.yourdomain.com">
+                <small style="color: #7f8c8d;">Point your domain's DNS to this server's IP</small>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="ssl_redirect" {% if settings.get('ssl_redirect') %}checked{% endif %}>
+                    Force HTTPS Redirect
+                </label>
+                <small style="color: #7f8c8d; display: block;">Requires valid SSL certificate</small>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="ssl_enabled" {% if settings.get('ssl_enabled') %}checked{% endif %}>
+                    SSL Enabled
+                </label>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <strong>💡 SSL Setup:</strong>
+                <p style="font-size: 13px; margin-top: 5px; color: #856404;">
+                    To enable SSL, run on your server:<br>
+                    <code style="background: #2c3e50; color: #ecf0f1; padding: 3px 8px; border-radius: 4px; font-size: 12px;">
+                        certbot --nginx -d yourdomain.com
+                    </code>
+                </p>
+            </div>
+        </div>
+        
+        <div style="flex: 1;">
+            <h3 style="margin-bottom: 15px;">👤 User Settings</h3>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="allow_registration" {% if settings.get('allow_registration', True) %}checked{% endif %}>
+                    Allow New User Registration
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="require_email_verify" {% if settings.get('require_email_verify') %}checked{% endif %}>
+                    Require Email Verification
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="allow_password_reset" {% if settings.get('allow_password_reset', True) %}checked{% endif %}>
+                    Allow Password Reset
+                </label>
+            </div>
+            <div class="form-group">
+                <label>Default User Role</label>
+                <select name="default_role" class="form-control">
+                    <option value="user" {% if settings.get('default_role', 'user') == 'user' %}selected{% endif %}>User</option>
+                    <option value="admin" {% if settings.get('default_role') == 'admin' %}selected{% endif %}>Admin</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <h3 style="margin: 25px 0 15px;">📁 Upload Settings</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Max Upload Size (MB)</label>
+            <input type="number" name="max_upload_mb" class="form-control" value="{{ settings.get('max_upload_mb', 10) }}" min="1" max="100">
+        </div>
+        <div class="form-group">
+            <label>Allowed File Types</label>
+            <input type="text" name="allowed_types" class="form-control" value="{{ settings.get('allowed_types', 'jpg,jpeg,png,gif,webp,bmp') }}">
+        </div>
+        <div class="form-group">
+            <label>Max Images Per User</label>
+            <input type="number" name="max_images_per_user" class="form-control" value="{{ settings.get('max_images_per_user', 100) }}" min="0">
+            <small style="color: #7f8c8d;">0 = unlimited</small>
+        </div>
+    </div>
+    
+    <h3 style="margin: 25px 0 15px;">🔒 Security</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Session Timeout (minutes)</label>
+            <input type="number" name="session_timeout" class="form-control" value="{{ settings.get('session_timeout', 60) }}" min="5">
+        </div>
+        <div class="form-group">
+            <label>Max Login Attempts</label>
+            <input type="number" name="max_login_attempts" class="form-control" value="{{ settings.get('max_login_attempts', 5) }}" min="1">
+        </div>
+        <div class="form-group">
+            <label>Lockout Duration (minutes)</label>
+            <input type="number" name="lockout_duration" class="form-control" value="{{ settings.get('lockout_duration', 15) }}" min="1">
+        </div>
+    </div>
+    <div class="form-group">
+        <label>
+            <input type="checkbox" name="require_strong_password" {% if settings.get('require_strong_password', True) %}checked{% endif %}>
+            Require Strong Passwords (8+ chars, mixed case, numbers)
+        </label>
+    </div>
+    
+    <h3 style="margin: 25px 0 15px;">📧 Email Settings (SMTP)</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>SMTP Host</label>
+            <input type="text" name="smtp_host" class="form-control" value="{{ settings.get('smtp_host', '') }}" placeholder="smtp.gmail.com">
+        </div>
+        <div class="form-group">
+            <label>SMTP Port</label>
+            <input type="number" name="smtp_port" class="form-control" value="{{ settings.get('smtp_port', 587) }}">
+        </div>
+        <div class="form-group">
+            <label>SMTP Username</label>
+            <input type="text" name="smtp_user" class="form-control" value="{{ settings.get('smtp_user', '') }}">
+        </div>
+        <div class="form-group">
+            <label>SMTP Password</label>
+            <input type="password" name="smtp_pass" class="form-control" value="{{ settings.get('smtp_pass', '') }}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label>From Email Address</label>
+        <input type="email" name="from_email" class="form-control" value="{{ settings.get('from_email', '') }}" placeholder="noreply@yourdomain.com">
+    </div>
+    
+    <button type="submit" class="btn btn-success" style="margin-top: 20px;">💾 Save Settings</button>
+</form>
+{% endblock %}

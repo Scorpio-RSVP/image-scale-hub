@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><i class="fas fa-image"></i> {{ app_name }}</h1>
+                    {% if request.endpoint == 'images.app' %}
+                    <p class="tagline">{{ Setting.get('app_tagline', 'Professional Image Processing') }}</p>
+                    {% endif %}
+                </div>
+                
+                {% if user %}
+                <nav class="nav">
+                    <a href="{{ url_for('images.app') }}" class="nav-link {% if request.endpoint == 'images.app' %}active{% endif %}">
+                        <i class="fas fa-tools"></i> Tools
+                    </a>
+                    <a href="{{ url_for('images.my_files') }}" class="nav-link {% if request.endpoint == 'images.my_files' %}active{% endif %}">
+                        <i class="fas fa-folder"></i> My Files
+                    </a>
+                    {% if user.is_admin %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint.startswith('admin.') %}active{% endif %}">
+                        <i class="fas fa-cog"></i> Admin
+                    </a>
+                    {% endif %}
+                    <div class="nav-dropdown">
+                        <button class="nav-link dropdown-toggle">
+                            <i class="fas fa-user"></i> {{ user.username }}
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
+                                <i class="fas fa-user-circle"></i> Profile
+                            </a>
+                            <a href="#" class="dropdown-item" onclick="showChangePasswordModal()">
+                                <i class="fas fa-key"></i> Change Password
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>{{ Setting.get('copyright_text', '© 2025 Scorpio RSVP') }} | Version {{ app_version }}</p>
+        </div>
+    </footer>
+
+    <!-- Flash Messages -->
+    <div id="flash-container" class="flash-container"></div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> Change Password</h3>
+                <button class="close-btn" onclick="closeChangePasswordModal()">&times;</button>
+            </div>
+            <form id="changePasswordForm" class="modal-body">
+                <div class="form-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" name="current_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" name="new_password" required>
+                    <div class="password-strength" id="passwordStrength"></div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" name="confirm_password" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+        // Flash message handling
+        function showFlashMessage(message, type = 'info') {
+            const container = document.getElementById('flash-container');
+            const flashDiv = document.createElement('div');
+            flashDiv.className = `flash-message flash-${type}`;
+            flashDiv.innerHTML = `
+                <span>${message}</span>
+                <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(flashDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (flashDiv.parentElement) {
+                    flashDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        // Change password modal
+        function showChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'block';
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+            document.getElementById('changePasswordForm').reset();
+        }
+
+        // Handle change password form
+        document.getElementById('changePasswordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Changing...';
+            
+            try {
+                const response = await fetch('{{ url_for("auth.change_password") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showFlashMessage(result.message, 'success');
+                    closeChangePasswordModal();
+                } else {
+                    showFlashMessage(result.error, 'error');
+                }
+            } catch (error) {
+                showFlashMessage('An error occurred. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Change Password';
+            }
+        });
+
+        // Password strength checker
+        document.getElementById('newPassword').addEventListener('input', function() {
+            const password = this.value;
+            const strengthDiv = document.getElementById('passwordStrength');
+            
+            if (password.length < 6) {
+                strengthDiv.innerHTML = '<span style="color: red;">Weak - Use at least 6 characters</span>';
+            } else if (password.length < 8) {
+                strengthDiv.innerHTML = '<span style="color: orange;">Fair - Add more characters</span>';
+            } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+                strengthDiv.innerHTML = '<span style="color: orange;">Good - Add uppercase, lowercase, and numbers</span>';
+            } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/.test(password)) {
+                strengthDiv.innerHTML = '<span style="color: blue;">Strong - Add special characters</span>';
+            } else {
+                strengthDiv.innerHTML = '<span style="color: green;">Very Strong!</span>';
+            }
+        });
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        });
+    </script>
+    
+    <!-- Flash messages from Flask -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div id="flash-messages-data" style="display: none;">
+                {% for category, message in messages %}
+                    <div data-category="{{ category }}" data-message="{{ message | e }}"></div>
+                {% endfor %}
+            </div>
+            <script>
+                // Process flash messages from data attributes
+                document.addEventListener('DOMContentLoaded', function() {
+                    const flashContainer = document.getElementById('flash-messages-data');
+                    if (flashContainer) {
+                        const messages = flashContainer.querySelectorAll('div');
+                        messages.forEach(function(msgElement) {
+                            const category = msgElement.getAttribute('data-category');
+                            const message = msgElement.getAttribute('data-message');
+                            if (typeof showFlashMessage === 'function') {
+                                showFlashMessage(message, category);
+                            }
+                        });
+                    }
+                });
+            </script>
+        {% endif %}
+    {% endwith %}
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
